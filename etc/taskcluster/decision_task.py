@@ -525,6 +525,9 @@ def macos_wpt():
             .with_script("""
                 export PKG_CONFIG_PATH="$(brew --prefix libffi)/lib/pkgconfig/"
             """)
+            .with_env(
+                RUST_LOG="gfx::font_cache_thread,gfx::font,gfx::font_context,gfx::platform::macos"
+            )
         )
     wpt_chunks("macOS x64", macos_run_task, build_task, repo_dir="repo",
                total_chunks=6, processes=4, chunks=[1,2,3])
