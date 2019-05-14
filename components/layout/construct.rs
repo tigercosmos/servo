@@ -705,9 +705,16 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
         // List of absolute descendants, in tree order.
         let mut abs_descendants = AbsoluteDescendants::new();
         let mut legalizer = Legalizer::new();
-        if !node.is_replaced_content() {
+        let is_media_element =
+            node.type_id() == Some(LayoutNodeType::Element(LayoutElementType::HTMLMediaElement));
+        if !node.is_replaced_content() || is_media_element {
             for kid in node.children() {
-                if kid.get_pseudo_element_type() != PseudoElementType::Normal {
+                if is_media_element && !kid.is_user_agent_widget() {
+                    // We only allow UA widgets as children of media elements.
+                    break;
+                }
+
+                if kid.get_pseudo_element_type() != PseudoElementType::Normal && !is_media_element {
                     self.process(&kid);
                 }
 
@@ -1248,9 +1255,15 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
             // Go to a path that concatenates our kids' fragments.
             self.build_fragments_for_nonreplaced_inline_content(node)
         } else {
-            // Otherwise, just nuke our kids' fragments, create our fragment if any, and be done
-            // with it.
-            self.build_fragments_for_replaced_inline_content(node)
+            if node.type_id() == Some(LayoutNodeType::Element(LayoutElementType::HTMLMediaElement))
+            {
+                // Do not treat media elements as leafs.
+                self.build_flow_for_block(node, None)
+            } else {
+                // Otherwise, just nuke our kids' fragments, create our fragment if any, and be done
+                // with it.
+                self.build_fragments_for_replaced_inline_content(node)
+            }
         }
     }
 

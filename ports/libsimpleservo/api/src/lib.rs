@@ -644,6 +644,12 @@ impl ResourceReaderMethods for ResourceReaderInstance {
             Resource::BluetoothBlocklist => {
                 &include_bytes!("../../../../resources/gatt_blocklist.txt")[..]
             },
+            Resource::MediaControlsCSS => {
+                &include_bytes!("../../../../resources/media_controls.css")[..]
+            },
+            Resource::MediaControlsJS => {
+                &include_bytes!("../../../../resources/media_controls.js")[..]
+            },
         })
     }
 

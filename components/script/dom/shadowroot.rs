@@ -28,6 +28,13 @@ use style::media_queries::Device;
 use style::shared_lock::SharedRwLockReadGuard;
 use style::stylesheets::Stylesheet;
 
+/// Whether a shadow root hosts an User Agent widget.
+#[derive(JSTraceable, MallocSizeOf, PartialEq)]
+pub enum IsUserAgentWidget {
+    No,
+    Yes,
+}
+
 // https://dom.spec.whatwg.org/#interface-shadowroot
 #[dom_struct]
 pub struct ShadowRoot {
@@ -43,7 +50,11 @@ pub struct ShadowRoot {
 
 impl ShadowRoot {
     #[allow(unrooted_must_root)]
-    fn new_inherited(host: &Element, document: &Document) -> ShadowRoot {
+    fn new_inherited(
+        host: &Element,
+        document: &Document,
+        is_widget: IsUserAgentWidget,
+    ) -> ShadowRoot {
         let document_fragment = DocumentFragment::new_inherited(document);
         let node = document_fragment.upcast::<Node>();
         node.set_flag(NodeFlags::IS_IN_SHADOW_TREE, true);
@@ -51,6 +62,9 @@ impl ShadowRoot {
             NodeFlags::IS_CONNECTED,
             host.upcast::<Node>().is_connected(),
         );
+        if is_widget == IsUserAgentWidget::Yes {
+            node.set_flag(NodeFlags::IS_USER_AGENT_WIDGET, true);
+        }
         ShadowRoot {
             document_fragment,
             document_or_shadow_root: DocumentOrShadowRoot::new(document.window()),
@@ -62,9 +76,13 @@ impl ShadowRoot {
         }
     }
 
-    pub fn new(host: &Element, document: &Document) -> DomRoot<ShadowRoot> {
+    pub fn new(
+        host: &Element,
+        document: &Document,
+        is_widget: IsUserAgentWidget,
+    ) -> DomRoot<ShadowRoot> {
         reflect_dom_object(
-            Box::new(ShadowRoot::new_inherited(host, document)),
+            Box::new(ShadowRoot::new_inherited(host, document, is_widget)),
             document.window(),
             ShadowRootBinding::Wrap,
         )
